@@ -1,15 +1,15 @@
-FROM ubuntu:20.04
+FROM ubuntu:18.04
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN apt-get update && apt-get -y install zsh curl git sudo locales vim dos2unix wget
+RUN apt-get update && apt-get -y install zsh curl git sudo locales vim dos2unix wget iputils-ping iproute2
 
 # disable annoying warning introduced in sudo: https://github.com/sudo-project/sudo/issues/42
 RUN echo "Set disable_coredump false" >> /etc/sudo.conf
 
 # create user and set password
 ARG WSL_USER_PASS
-RUN useradd --create-home --shell /usr/bin/zsh alex
-RUN echo "$WSL_USER_PASS" | passwd -d alex
+RUN useradd --create-home alex
+RUN echo "${WSL_USER_PASS}\n${WSL_USER_PASS}" | passwd alex
 RUN usermod -aG sudo alex
 
 COPY wsl.conf /etc/wsl.conf
@@ -24,13 +24,13 @@ RUN locale-gen en_US.UTF-8
 
 USER alex
 
+# install oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
 # configure git
 RUN git config --global user.email "alex@alexchiri.com"
 RUN git config --global user.name "Alexandru Chiritescu"
 RUN git config --global core.autocrlf true
-
-# install oh-my-zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
 # change the shade of blue in the theme
 RUN sed -i '0,/blue/{s/blue/39d/}' /home/alex/.oh-my-zsh/themes/agnoster.zsh-theme
@@ -39,3 +39,8 @@ USER root
 # copy zsh config
 COPY .zshrc /home/alex/.zshrc
 RUN chown alex:alex /home/alex/.zshrc
+RUN usermod --shell /usr/bin/zsh alex
+
+# copy vim config
+COPY .vimrc /home/alex/.vimrc
+RUN chown alex:alex /home/alex/.vimrc
