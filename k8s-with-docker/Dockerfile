@@ -8,7 +8,7 @@ RUN apt-get update && apt-get -y install jq unzip python3 apt-transport-https ca
 # need to look further into this, for now I am just running these manually every time I get the issue with kind - should probably make a script
 # https://github.com/microsoft/WSL/issues/4189
 # https://github.com/docker/for-linux/issues/219
-# Also, there is another way to do this here: https://kind.sigs.k8s.io/docs/user/using-wsl2/#cannot-find-cgroup-mount-destination-unknown
+# Also, there is another way to do this here, but it doesn't really work: https://kind.sigs.k8s.io/docs/user/using-wsl2/#cannot-find-cgroup-mount-destination-unknown
 #RUN mkdir /sys/fs/cgroup/systemd
 #RUN mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
 
@@ -22,6 +22,11 @@ ENV GO111MODULE="on"
 ENV KIND_VERSION="v0.8.0"
 
 USER root
+
+# include script to bring to fix docker issue (and make sure it has linux style line endings)
+COPY create-cgroup /usr/local/bin/create-cgroup
+RUN chmod +x /usr/local/bin/create-cgroup
+RUN dos2unix /usr/local/bin/create-cgroup
 
 # install go
 RUN cd /tmp && curl -LO "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz" \
@@ -65,7 +70,7 @@ RUN ln -s /opt/kubectx/completion/kubens.zsh /home/alex/.oh-my-zsh/completions/_
 USER alex
 
 # install helmdiff - look at this afterwards, for some reason now it fails with line encoding issues
-# RUN helm plugin install https://github.com/databus23/helm-diff --version master
+RUN helm plugin install https://github.com/databus23/helm-diff --version master
 
 # add kubectl autocomplete with alias
 RUN echo "source <(kubectl completion zsh)" >> ~/.zshrc

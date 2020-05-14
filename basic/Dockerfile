@@ -30,7 +30,7 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 # configure git
 RUN git config --global user.email "alex@alexchiri.com"
 RUN git config --global user.name "Alexandru Chiritescu"
-RUN git config --global core.autocrlf true
+RUN git config --global core.autocrlf false
 
 # change the shade of blue in the theme
 RUN sed -i '0,/blue/{s/blue/39d/}' /home/alex/.oh-my-zsh/themes/agnoster.zsh-theme
@@ -43,4 +43,5 @@ RUN usermod --shell /usr/bin/zsh alex
 
 # copy vim config
 COPY .vimrc /home/alex/.vimrc
+RUN dos2unix /home/alex/.vimrc
 RUN chown alex:alex /home/alex/.vimrc
