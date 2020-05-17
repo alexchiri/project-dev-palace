@@ -2,7 +2,7 @@ FROM alexchiri/docker:latest
 
 USER root
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN apt-get update && apt-get -y install jq unzip python3 apt-transport-https ca-certificates software-properties-common jid pkg-config
+RUN apt-get update && apt-get -y install jq unzip python3 apt-transport-https ca-certificates software-properties-common jid
 
 # fix for issue with running kind in WSL2 and with Docker CE, but this cannot be run here, because these exist at this point.
 # need to look further into this, for now I am just running these manually every time I get the issue with kind - should probably make a script
@@ -24,9 +24,9 @@ ENV KIND_VERSION="v0.8.0"
 USER root
 
 # include script to bring to fix docker issue (and make sure it has linux style line endings)
-COPY create-cgroup /usr/local/bin/create-cgroup
-RUN chmod +x /usr/local/bin/create-cgroup
-RUN dos2unix /usr/local/bin/create-cgroup
+COPY start_docker /usr/local/sbin/start_docker
+RUN chmod +x /usr/local/sbin/start_docker
+RUN dos2unix /usr/local/sbin/start_docker
 
 # install go
 RUN cd /tmp && curl -LO "https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz" \
