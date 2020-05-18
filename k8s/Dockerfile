@@ -2,7 +2,7 @@ FROM alexchiri/basic:latest
 
 USER root
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN apt-get update && apt-get -y install jq unzip python3 apt-transport-https ca-certificates software-properties-common jid pkg-config
+RUN apt-get update && apt-get -y install jq unzip python3 apt-transport-https ca-certificates software-properties-common jid
 
 USER alex
 
