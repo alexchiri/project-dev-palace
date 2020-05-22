@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN apt-get update && apt-get -y install zsh curl git sudo locales vim dos2unix wget iputils-ping iproute2
+RUN apt-get update && apt-get -y install zsh curl git sudo locales vim dos2unix wget iputils-ping iproute2 firefox
 
 # disable annoying warning introduced in sudo: https://github.com/sudo-project/sudo/issues/42
 RUN echo "Set disable_coredump false" >> /etc/sudo.conf
