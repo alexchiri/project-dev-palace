@@ -1,4 +1,4 @@
-FROM alexchiri/k8s-with-docker:latest
+FROM alexchiri.azurecr.io/k8s-with-docker:latest
 
 ENV MAVEN_VERSION="3.6.3"
 

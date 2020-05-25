@@ -1,4 +1,4 @@
-FROM alexchiri/basic:latest
+FROM alexchiri.azurecr.io/basic:latest
 
 USER root
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
