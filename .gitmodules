@@ -1,0 +1,18 @@
+[submodule "azure"]
+	path = azure
+	url = https://github.com/alexchiri/project-dev-palace-azure
+[submodule "basic"]
+	path = basic
+	url = https://github.com/alexchiri/project-dev-palace-basic
+[submodule "docker"]
+	path = docker
+	url = https://github.com/alexchiri/project-dev-palace-docker
+[submodule "k8s"]
+	path = k8s
+	url = https://github.com/alexchiri/project-dev-palace-k8s
+[submodule "k8s-with-docker"]
+	path = k8s-with-docker
+	url = https://github.com/alexchiri/project-dev-palace-k8s-with-docker
+[submodule "learn.alexchiri.com"]
+	path = learn.alexchiri.com
+	url = https://github.com/alexchiri/project-dev-palace-learn.alexchiri.com

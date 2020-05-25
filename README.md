@@ -59,6 +59,22 @@ az acr task create \
 
 az acr task run --registry $ACR_NAME --name build-push-azure
 ```
+
+## Submodule related
+
+```bash
+git submodule add --name azure https://github.com/alexchiri/project-dev-palace-azure azure
+git submodule add --name basic https://github.com/alexchiri/project-dev-palace-basic basic
+git submodule add --name docker https://github.com/alexchiri/project-dev-palace-docker docker
+git submodule add --name k8s https://github.com/alexchiri/project-dev-palace-k8s k8s
+git submodule add --name k8s-with-docker https://github.com/alexchiri/project-dev-palace-k8s-with-docker k8s-with-docker
+git submodule add --name learn.alexchiri.com https://github.com/alexchiri/project-dev-palace-learn.alexchiri.com learn.alexchiri.com
+
+
+
+git config --global diff.submodule log
+```
+
 ## Obsolete
 
 Create an Azure Principal to be able to login:
