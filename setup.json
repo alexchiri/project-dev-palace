@@ -1,0 +1,76 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "acr-task-git-user": {
+            "type": "string",
+            "metadata": {
+                "description": "The git user that owns the repository used as source for the task."
+            }
+        },
+        "acr-task-git-token": {
+            "type": "string",
+            "metadata": {
+                "description": "The PAT git token used to access the git repository used as source for the task."
+            }
+        }
+    },
+    "functions": [],
+    "variables": {},
+    "resources": [
+        {
+            "name": "alexchiri",
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "2019-05-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Basic"
+            },
+            "properties": {
+                "adminUserEnabled": true
+            }
+        },
+        {
+            "name": "alexchiri/build-task-basic",
+            "type": "Microsoft.ContainerRegistry/registries/tasks",
+            "apiVersion": "2019-06-01-preview",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [ "[resourceId('Microsoft.ContainerRegistry/registries', 'alexchiri')]" ],
+            "properties": {
+                "status": "Enabled",
+                "platform": {
+                    "os": "Linux",
+                    "architecture": "amd64"
+                },
+                "step": {
+                    "type": "Docker",
+                    "dockerFilePath": "Dockerfile",
+                    "imageNames": [ "basic:{{.Run.ID}}" ],
+                    "contextPath": "[concat('https://github.com/', parameters('acr-task-git-user'),'/project-dev-palace-basic.git')]",                    
+                },
+                "trigger": {
+                    "timerTriggers": [],
+                    "sourceTriggers": [
+                        {
+                            "sourceRepository": {
+                                "sourceControlType": "Github",
+                                "repositoryUrl": "[concat('https://github.com/', parameters('acr-task-git-user'),'/project-dev-palace-basic.git')]",
+                                "branch": "master",
+                                "sourceControlAuthProperties": {
+                                    "tokenType": "PAT",
+                                    "token": "[parameters('acr-task-git-token')]"
+                                }
+                            },
+                            "sourceTriggerEvents": [
+                                "commit"
+                            ],
+                            "status": "Enabled",
+                            "name": "basic-commit-trigger"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
