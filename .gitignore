@@ -1,4 +1,5 @@
 .idea
 *.tar
 source.sh
+source.ps1
 .vscode
