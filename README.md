@@ -1,85 +1,25 @@
 # Project Dev Palace
 
-## Flow with Azure and ACR Tasks
+**This is a messy work-in-progress and the content of this repo is not well abstractized to be reused. It might contain hard-coded resource names.**
 
-1. Create ACR called `alexchiri`
-2. Create ACR tasks for each of the images
-3. Update local development environments when the "chevron" is clicked in Windows Terminal. Replace default wsl command with a script that 
-   1. pulls the latest image, 
-   2. saves it as tar, 
-   3. removes current WSL, (can I figure out somehow if there is a windows terminal running with that WSL?, otherwise I just create multiple profiles in WSL: simple ones and ones that update and they are just fake)
-   4. imports the new one from the exported tar 
+In the same way you might have different rooms in a palace for different purposes, the same way you could have different development environments for different use cases. The goal of this project is to serve as a proof-of-concept for having development environments as code using Docker, Windows Subsystem for Linux 2 (WSL2) and Windows Terminal.
 
-### 1. Create ACR called `alexchiri`
+In this repo, multiple development environments are defined as Dockerfiles, for different purposes. Each of them is in a separate git submodule and repo and they are configured to be built and pushed to Azure Container Registry. The Docker images depend on each other and ACR provides automatic builds when a base image changes using build tasks.
 
-```bash
-az acr create --name alexchiri \
-              --resource-group alexchiri \
-              --sku Basic
+ACR registry, build tasks and first runs can be configured using provided ARM template (`setup.json`) and using the following Powershell command:
+
+```powershell
+New-AzResourceGroupDeployment -Name 'project-dev-palace-test' `
+ -ResourceGroupName alexchiri `
+ -TemplateFile .\setup.json `
+ -acrTaskGitUser $GIT_USER `
+ -acrTaskGitToken $GIT_PAT `
+ -wslUserPass $WSL_USER_PASS
 ```
 
-### 2. Create ACR tasks for each of the images
+The heavy lifting of updating the development environments locally is done by [dragon](https://github.com/alexchiri/dragon) a CLI built in Rust, which is currently a work-in-progress.
 
-Had to split everything in submodules because tasks get triggered by every commit being done on a repo, so if you have all Dockerfiles in the same repo, for each commit you make, all images will be rebuilt at least once. That's fine in the end if you are not in a hurry, but it can get quite expensive because there are a lot of un-necessary task runs. You also avoid triggering builds for changes to README docs or files not related to the actual Docker images.
-
-So every Docker image is in its own repo and the parent repo uses all submodules with Docker images.
-
-With the tasks below, when a base image gets changed, this will trigger a build for the base image and all the images depending on the base image and all the images depending on them and so on, which is very neat.
-
-I am using latest for all images, since I am not making any use of versioning at this point, but there comes a point when it is important to know which version of the dev environment you are running, but I will take that when I get there.
-
-```bash
-az acr task create \
-    --registry $ACR_NAME \
-    --name build-push-basic \
-    --secret-arg WSL_USER_PASS=$WSL_USER_PASS \
-    --image basic:latest \
-    --context https://github.com/$GIT_USER/project-dev-palace-basic.git \
-    --file Dockerfile \
-    --git-access-token $GIT_PAT
-
-# run the build-push-basic task for the first time
-az acr task run --registry $ACR_NAME --name build-push-basic
-
-# check for logs and see if the task has run on code commit
-az acr task logs --registry $ACR_NAME
-
-az acr task create \
-    --registry $ACR_NAME \
-    --name build-push-k8s \
-    --image k8s:latest \
-    --arg REGISTRY_NAME=$ACR_NAME.azurecr.io \
-    --context https://github.com/$GIT_USER/project-dev-palace-k8s.git \
-    --file Dockerfile \
-    --git-access-token $GIT_PAT
-
-az acr task run --registry $ACR_NAME --name build-push-k8s
-
-az acr task create \
-    --registry $ACR_NAME \
-    --name build-push-azure \
-    --image azure:latest \
-    --arg REGISTRY_NAME=$ACR_NAME.azurecr.io \
-    --context https://github.com/$GIT_USER/project-dev-palace-azure.git \
-    --file Dockerfile \
-    --git-access-token $GIT_PAT
-
-az acr task run --registry $ACR_NAME --name build-push-azure
-```
-
-## 3 Update local development environments
-
-Use `update_wsl.py` script in the `commandLine` property of the Windows Terminal profile and provide the parameters required by the script:
-
-```bash
-cmd.exe /C az acr login -n alexchiri && cd %userprofile% && python C:\\Users\\alex\\Projects\\project-dev-palace\\update_wsl.py alexchiri basic basic D:\\WSLs
-```
-
-This execution is rather slow and the Python script is rather basic, but it works. 
-Ideally, I would be able to determine if there is a process using a WSL distro and in that case, skip the update. But since I worked-around that for now by creating a new profile in Windows Terminal that maps to an existing WSL distro and that runs the update script. So it is a manual action and you know that if you have the WSL that you are updating opened, that session will be closed.
-
-
-## Submodule related
+## Submodule related commands
 
 ```bash
 git submodule add --name azure https://github.com/alexchiri/project-dev-palace-azure azure
@@ -88,8 +28,6 @@ git submodule add --name docker https://github.com/alexchiri/project-dev-palace-
 git submodule add --name k8s https://github.com/alexchiri/project-dev-palace-k8s k8s
 git submodule add --name k8s-with-docker https://github.com/alexchiri/project-dev-palace-k8s-with-docker k8s-with-docker
 git submodule add --name learn.alexchiri.com https://github.com/alexchiri/project-dev-palace-learn.alexchiri.com learn.alexchiri.com
-
-
 
 git config --global diff.submodule log
 git config status.submodulesummary 1
