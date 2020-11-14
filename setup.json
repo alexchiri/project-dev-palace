@@ -2,24 +2,34 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "acr-task-git-user": {
+        "acrTaskGitUser": {
             "type": "string",
             "metadata": {
                 "description": "The git user that owns the repository used as source for the task."
             }
         },
-        "acr-task-git-token": {
-            "type": "string",
+        "acrTaskGitToken": {
+            "type": "securestring",
             "metadata": {
                 "description": "The PAT git token used to access the git repository used as source for the task."
+            }
+        },
+        "wslUserPass": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password used for the WSL VM user."
             }
         }
     },
     "functions": [],
-    "variables": {},
+    "variables": {
+        "acrRegistryName": "alexchiri",
+        "acrBuildBasicTaskName": "buildBasicTask",
+        "acrBuildBasicTaskRunName": "buildBasicTaskrun"
+    },
     "resources": [
         {
-            "name": "alexchiri",
+            "name": "[variables('acrRegistryName')]",
             "type": "Microsoft.ContainerRegistry/registries",
             "apiVersion": "2019-05-01",
             "location": "[resourceGroup().location]",
@@ -31,11 +41,11 @@
             }
         },
         {
-            "name": "alexchiri/build-task-basic",
+            "name": "[concat(variables('acrRegistryName'), '/', variables('acrBuildBasicTaskName'))]",
             "type": "Microsoft.ContainerRegistry/registries/tasks",
             "apiVersion": "2019-06-01-preview",
             "location": "[resourceGroup().location]",
-            "dependsOn": [ "[resourceId('Microsoft.ContainerRegistry/registries', 'alexchiri')]" ],
+            "dependsOn": [ "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrRegistryName'))]" ],
             "properties": {
                 "status": "Enabled",
                 "platform": {
@@ -46,7 +56,15 @@
                     "type": "Docker",
                     "dockerFilePath": "Dockerfile",
                     "imageNames": [ "basic:{{.Run.ID}}" ],
-                    "contextPath": "[concat('https://github.com/', parameters('acr-task-git-user'),'/project-dev-palace-basic.git')]",                    
+                    "contextPath": "[concat('https://github.com/', parameters('acrTaskGitUser'),'/project-dev-palace-basic.git')]",
+                    "isPushEnabled": true,
+                    "arguments": [
+                        {
+                            "name": "WSL_USER_PASS",
+                            "value": "[parameters('wslUserPass')]",
+                            "isSecret": true
+                        }
+                    ]                 
                 },
                 "trigger": {
                     "timerTriggers": [],
@@ -54,20 +72,44 @@
                         {
                             "sourceRepository": {
                                 "sourceControlType": "Github",
-                                "repositoryUrl": "[concat('https://github.com/', parameters('acr-task-git-user'),'/project-dev-palace-basic.git')]",
+                                "repositoryUrl": "[concat('https://github.com/', parameters('acrTaskGitUser'),'/project-dev-palace-basic.git')]",
                                 "branch": "master",
                                 "sourceControlAuthProperties": {
                                     "tokenType": "PAT",
-                                    "token": "[parameters('acr-task-git-token')]"
+                                    "token": "[parameters('acrTaskGitToken')]"
                                 }
                             },
                             "sourceTriggerEvents": [
                                 "commit"
                             ],
-                            "status": "Enabled",
-                            "name": "basic-commit-trigger"
+                            "name": "[concat(variables('acrBuildBasicTaskName'), 'SourceTrigger')]"
                         }
-                    ]
+                    ],
+                    "baseImageTrigger": {
+                        "baseImageTriggerType": "Runtime",
+                        "updateTriggerPayloadType": "Default",
+                        "name": "[concat(variables('acrBuildBasicTaskName'), 'BaseImageTrigger')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ContainerRegistry/registries/taskRuns",
+            "name": "[concat(variables('acrRegistryName'), '/', variables('acrBuildBasicTaskRunName'))]",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2019-06-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerRegistry/registries/tasks', variables('acrRegistryName'), variables('acrBuildBasicTaskName'))]"
+            ],
+            "properties": {
+                "runRequest": {
+                    "type": "TaskRunRequest",
+                    "taskId": "[resourceId('Microsoft.ContainerRegistry/registries/tasks', variables('acrRegistryName'), variables('acrBuildBasicTaskName'))]",
+                    "values": [],
+                    "platform": {
+                        "os": "linux",
+                        "architecture": "amd64"
+                    }
                 }
             }
         }
