@@ -19,17 +19,49 @@
             "metadata": {
                 "description": "Password used for the WSL VM user."
             }
+        },
+        "gitHubRepoName": {
+            "type": "string",
+            "metadata": {
+                "description": "Repository where the Dockerfile is located."
+            }
+        },
+        "acrRegistryName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the ACR."
+            }
+        },
+        "acrTaskName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the ACR Task"
+            }
+        },
+        "acrTaskRunName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the ACR Task Run"
+            }
+        },
+        "dockerImageName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the Docker image to push to."
+            }
+        },
+        "dockerImageStableVersion": {
+            "type": "string",
+            "metadata": {
+                "description": "The current stable version of the image"
+            }
         }
     },
     "functions": [],
-    "variables": {
-        "acrRegistryName": "alexchiri",
-        "acrBuildBasicTaskName": "buildBasicTask",
-        "acrBuildBasicTaskRunName": "buildBasicTaskrun"
-    },
+    "variables": {},
     "resources": [
         {
-            "name": "[variables('acrRegistryName')]",
+            "name": "[parameters('acrRegistryName')]",
             "type": "Microsoft.ContainerRegistry/registries",
             "apiVersion": "2019-05-01",
             "location": "[resourceGroup().location]",
@@ -41,11 +73,11 @@
             }
         },
         {
-            "name": "[concat(variables('acrRegistryName'), '/', variables('acrBuildBasicTaskName'))]",
+            "name": "[concat(parameters('acrRegistryName'), '/', parameters('acrTaskName'))]",
             "type": "Microsoft.ContainerRegistry/registries/tasks",
             "apiVersion": "2019-06-01-preview",
             "location": "[resourceGroup().location]",
-            "dependsOn": [ "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrRegistryName'))]" ],
+            "dependsOn": [ "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrRegistryName'))]" ],
             "properties": {
                 "status": "Enabled",
                 "platform": {
@@ -55,8 +87,8 @@
                 "step": {
                     "type": "Docker",
                     "dockerFilePath": "Dockerfile",
-                    "imageNames": [ "basic:{{.Run.ID}}" ],
-                    "contextPath": "[concat('https://github.com/', parameters('acrTaskGitUser'),'/project-dev-palace-basic.git')]",
+                    "imageNames": [ "[concat(parameters('dockerImageName'),':',parameters('dockerImageStableVersion'))]", "[concat(parameters('dockerImageName'),':',parameters('dockerImageStableVersion'),'.{{.Run.ID}}')]" ],
+                    "contextPath": "[concat('https://github.com/', parameters('acrTaskGitUser'),'/', parameters('gitHubRepoName'),'.git')]",
                     "isPushEnabled": true,
                     "arguments": [
                         {
@@ -72,7 +104,7 @@
                         {
                             "sourceRepository": {
                                 "sourceControlType": "Github",
-                                "repositoryUrl": "[concat('https://github.com/', parameters('acrTaskGitUser'),'/project-dev-palace-basic.git')]",
+                                "repositoryUrl": "[concat('https://github.com/', parameters('acrTaskGitUser'),'/', parameters('gitHubRepoName'),'.git')]",
                                 "branch": "master",
                                 "sourceControlAuthProperties": {
                                     "tokenType": "PAT",
@@ -82,29 +114,29 @@
                             "sourceTriggerEvents": [
                                 "commit"
                             ],
-                            "name": "[concat(variables('acrBuildBasicTaskName'), 'SourceTrigger')]"
+                            "name": "[concat(parameters('acrTaskName'), 'SourceTrigger')]"
                         }
                     ],
                     "baseImageTrigger": {
                         "baseImageTriggerType": "Runtime",
                         "updateTriggerPayloadType": "Default",
-                        "name": "[concat(variables('acrBuildBasicTaskName'), 'BaseImageTrigger')]"
+                        "name": "[concat(parameters('acrTaskName'), 'BaseImageTrigger')]"
                     }
                 }
             }
         },
         {
             "type": "Microsoft.ContainerRegistry/registries/taskRuns",
-            "name": "[concat(variables('acrRegistryName'), '/', variables('acrBuildBasicTaskRunName'))]",
+            "name": "[concat(parameters('acrRegistryName'), '/', parameters('acrTaskRunName'))]",
             "location": "[resourceGroup().location]",
             "apiVersion": "2019-06-01-preview",
             "dependsOn": [
-                "[resourceId('Microsoft.ContainerRegistry/registries/tasks', variables('acrRegistryName'), variables('acrBuildBasicTaskName'))]"
+                "[resourceId('Microsoft.ContainerRegistry/registries/tasks', parameters('acrRegistryName'), parameters('acrTaskName'))]"
             ],
             "properties": {
                 "runRequest": {
                     "type": "TaskRunRequest",
-                    "taskId": "[resourceId('Microsoft.ContainerRegistry/registries/tasks', variables('acrRegistryName'), variables('acrBuildBasicTaskName'))]",
+                    "taskId": "[resourceId('Microsoft.ContainerRegistry/registries/tasks', parameters('acrRegistryName'), parameters('acrTaskName'))]",
                     "values": [],
                     "platform": {
                         "os": "linux",
