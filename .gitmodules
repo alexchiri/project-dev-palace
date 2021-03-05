@@ -16,3 +16,6 @@
 [submodule "learn.alexchiri.com"]
 	path = learn.alexchiri.com
 	url = https://github.com/alexchiri/project-dev-palace-learn.alexchiri.com
+[submodule "terraform"]
+	path = terraform
+	url = git@github.com:alexchiri/project-dev-palace-terraform.git
