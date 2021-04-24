@@ -19,3 +19,9 @@
 [submodule "terraform"]
 	path = terraform
 	url = git@github.com:alexchiri/project-dev-palace-terraform.git
+[submodule "rust"]
+	path = rust
+	url = https://github.com/alexchiri/project-dev-palace-rust
+[submodule "eleventy"]
+	path = eleventy
+	url = git@github.com:alexchiri/project-dev-palace-eleventy.git
